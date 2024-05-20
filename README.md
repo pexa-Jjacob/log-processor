@@ -31,12 +31,18 @@ Build the project:
 mvn clean install
 ```
 
-## Running the tests
+## Running the program
 
 To run the tests, use the following command:
 
 ```bash
 mvn test
+```
+
+to run the program, use the following command:
+
+```bash 
+mvn -q exec:java
 ```
 
 ## Usage
@@ -50,8 +56,4 @@ The application parses log files and processes the IP addresses and URLs. It als
 
 ## Authors
 
-- **pexa-Jjacob** - Initial work
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
+- **Jacob Clement** 
