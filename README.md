@@ -36,7 +36,7 @@ mvn clean install
 To run the tests, use the following command:
 
 ```bash
-mvn test
+mvn -q test
 ```
 
 to run the program, use the following command:
