@@ -74,9 +74,18 @@ public class LogParser {
     }
 
     void printResults() {
-        String result = "For logfile: " + logPath.getFileName() + ", The top 3 IP Addresses are: \n" + String.join("\n", getTopThree(logIpAddress)) +
-                "\n  There are " + logIpAddress.values().size() + " Unique IP Addresses" +
-                "\n and the top 3 URLs are: \n" + String.join("\n", getTopThree(logUrls));
-        log.info(result);
+        StringBuilder result = new StringBuilder();
+        result.append("--------------------------------------------------\n");
+        result.append("Parsing Logfile: ").append(logPath.getFileName()).append("\n");
+        result.append("--------------------------------------------------\n");
+        result.append("Top 3 IP Addresses:\n");
+        getTopThree(logIpAddress).forEach(ip -> result.append(ip).append("\n"));
+        result.append("--------------------------------------------------\n");
+        result.append("Unique IP Addresses: ").append(logIpAddress.values().size()).append("\n");
+        result.append("--------------------------------------------------\n");
+        result.append("Top 3 URLs:\n");
+        getTopThree(logUrls).forEach(url -> result.append(url).append("\n"));
+        result.append("--------------------------------------------------\n");
+        log.info(result.toString());
     }
 }
