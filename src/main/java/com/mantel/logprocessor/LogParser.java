@@ -6,11 +6,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.PriorityQueue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -40,6 +38,7 @@ public class LogParser {
             printResults();
         } catch (IOException e) {
             log.error("Error reading log file");
+            throw new RuntimeException(e);
         }
     }
 
@@ -47,30 +46,31 @@ public class LogParser {
         Matcher matcher = IP_ADDRESS_PATTERN.matcher(line);
         while (matcher.find()) {
             String ip = matcher.group();
-            logIpAddress.put(ip, logIpAddress.getOrDefault(ip, 0) + 1);
+            updateIpCount(ip);
         }
+    }
+    void updateIpCount(String url) {
+        logIpAddress.put(url, logIpAddress.getOrDefault(url, 0) + 1);
     }
 
     void processLogUrls(String line) {
         Matcher matcher = URL_PATTERN.matcher(line);
         while (matcher.find()) {
             String url = matcher.group();
-            logUrls.put(url, logUrls.getOrDefault(url, 0) + 1);
+            updateUrlCount(url);
         }
     }
 
-    List<String> getTopThree(Map<String, Integer> list) {
-        PriorityQueue<Map.Entry<String, Integer>> heap = new PriorityQueue<>(
-                (a, b) -> Integer.compare(b.getValue(), a.getValue())
-        );
-        heap.addAll(list.entrySet());
+   private void updateUrlCount(String url) {
+        logUrls.put(url, logUrls.getOrDefault(url, 0) + 1);
+    }
 
-        List<String> topThree = new ArrayList<>();
-        for (int i = 0; i < 3 && !heap.isEmpty(); i++) {
-            Map.Entry<String, Integer> entry = heap.poll();
-            topThree.add(entry.getKey() + ", with " + entry.getValue() + " entries: ");
-        }
-        return topThree;
+    public List<String> getTopThree(Map<String, Integer> map) {
+        return map.entrySet().stream()
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                .limit(3)
+                .map(entry -> entry.getKey() + ", with " + entry.getValue() + " entries: ")
+                .toList();
     }
 
     void printResults() {

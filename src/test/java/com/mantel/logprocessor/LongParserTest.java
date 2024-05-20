@@ -11,12 +11,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 @ExtendWith(MockitoExtension.class)
 class LongParserTest {
@@ -25,6 +23,7 @@ class LongParserTest {
 
     private static final String  mockLogLine = "192.168.1.1 - - [25/Apr/2024:10:29:00 +0000] \"GET /index.html HTTP/1.1\"";
     private static final Integer EXPECTED_TOP_THREE_SIZE = 3;
+    private static final Integer EXPECTED_UNIQUE_IP_ADDRESSES = 3;
 
     @BeforeEach
     public void setUp() {
@@ -41,21 +40,21 @@ class LongParserTest {
     void testParseLogUnhappyPath() {
         logParser.logPath = Paths.get("src/test/resources/non-existent-file.log");
 
-        verifyNoMoreInteractions(logParser);
+        assertThrows(RuntimeException.class, () -> logParser.parseLog());
     }
 
     @Test
     void testProcessLogIpAddress() {
         logParser.processLogIpAddress(mockLogLine);
         Map<String, Integer> logIpAddress = logParser.logIpAddress;
-        assertThat(logIpAddress.get("192.168.1.1")).isEqualTo(1);
+        assertThat(logIpAddress).containsEntry("192.168.1.1",1);
     }
 
     @Test
     void testProcessLogUrls() {
          logParser.processLogUrls(mockLogLine);
         Map<String, Integer> logUrls = logParser.logUrls;
-        assertThat(logUrls.get("GET /index.html HTTP/1.1")).isEqualTo(1);
+        assertThat(logUrls).containsEntry("GET /index.html HTTP/1.1",1);
     }
 
     @Test
@@ -74,23 +73,24 @@ class LongParserTest {
     void testParseLogEndToEnd() {
         logParser.logPath = Paths.get("src/test/resources/test-log.log");
 
-
         logParser.parseLog();
 
-        Map<String, Integer> logIpAddress = logParser.logIpAddress;
-        Map<String, Integer> logUrls = logParser.logUrls;
-        List<String> topThree = logParser.getTopThree(logIpAddress);
+        List<String> topThreeIps = logParser.getTopThree(logParser.logIpAddress);
+        List<String> topThreeUrls = logParser.getTopThree(logParser.logUrls);
 
-
-        assertEquals(3, topThree.size());
-        assertEquals("192.168.1.1, with 7 entries: ", topThree.get(0));
-        assertEquals("198.51.100.0, with 5 entries: ", topThree.get(1));
-        assertEquals("203.0.113.0, with 4 entries: ", topThree.get(2));
-
+        assertThat(topThreeIps).hasSize(EXPECTED_TOP_THREE_SIZE);
+        assertThat( topThreeIps.get(0)).isEqualTo("192.168.1.1, with 7 entries: ");
+        assertThat( topThreeIps.get(1)).isEqualTo("198.51.100.0, with 5 entries: ");
+        assertThat( topThreeIps.get(2)).isEqualTo("203.0.113.0, with 4 entries: ");
+        assertThat(topThreeUrls).hasSize(EXPECTED_TOP_THREE_SIZE);
+        assertThat( topThreeUrls.get(0)).isEqualTo("GET /index.html HTTP/1.1, with 7 entries: ");
+        assertThat( topThreeUrls.get(1)).isEqualTo("PUT /update_info HTTP/1.1, with 5 entries: ");
+        assertThat( topThreeUrls.get(2)).isEqualTo("DELETE /remove_data HTTP/1.1, with 3 entries: ");
+        assertThat(logParser.logIpAddress.values()).hasSize(EXPECTED_UNIQUE_IP_ADDRESSES);
     }
 
     private Map<String, Integer> buildIpAddressMap(){
-        Map<String, Integer> logIpAddress = new HashMap<String, Integer>();
+        Map<String, Integer> logIpAddress = new HashMap<>();
         logIpAddress.put("192.168.1.1", 5);
         logIpAddress.put("192.168.1.2", 3);
         logIpAddress.put("192.168.1.3", 2);
