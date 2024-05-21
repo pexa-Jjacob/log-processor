@@ -1,7 +1,5 @@
 # Log Processor
 
-This is a Java application that processes log files. It parses the logs, processes IP addresses and URLs, and provides the top three most frequent entries for each.
-
 ## Getting Started
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
