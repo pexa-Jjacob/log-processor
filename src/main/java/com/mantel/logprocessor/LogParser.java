@@ -49,6 +49,7 @@ public class LogParser {
             updateIpCount(ip);
         }
     }
+
     void updateIpCount(String url) {
         logIpAddress.put(url, logIpAddress.getOrDefault(url, 0) + 1);
     }
@@ -65,7 +66,7 @@ public class LogParser {
         logUrls.put(url, logUrls.getOrDefault(url, 0) + 1);
     }
 
-    public List<String> getTopThree(Map<String, Integer> map) {
+    List<String> getTopThree(Map<String, Integer> map) {
         return map.entrySet().stream()
                 .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
                 .limit(3)
