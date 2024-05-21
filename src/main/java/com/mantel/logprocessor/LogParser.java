@@ -15,8 +15,19 @@ import java.util.regex.Pattern;
 @Slf4j
 public class LogParser {
 
+    /**
+     * Path to the log file to be parsed.
+     */
     Path logPath = Path.of("src/main/resources/programming-task-example-data.log");
+
+    /**
+     * Regular expression pattern for matching IP addresses in log lines.
+     */
     private static final Pattern IP_ADDRESS_PATTERN = Pattern.compile("\\b((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b");
+
+    /**
+     * Regular expression pattern for matching URLs in log lines.
+     */
     private static final Pattern URL_PATTERN = Pattern.compile("(GET|POST|PUT|DELETE)\\s+(http://|https://)?[^\\s]+\\s+HTTP/1\\.1");
 
     Map<String, Integer> logIpAddress = new HashMap<>();
@@ -25,8 +36,12 @@ public class LogParser {
     public static void main(String[] args) {
         LogParser logParser = new LogParser();
         logParser.parseLog();
+        logParser.printResults();
     }
 
+    /**
+     * Parses the log file and processes each line to extract IP addresses and URLs.
+     */
     void parseLog() {
         log.info("Parsing log file: {}", logPath);
         try (BufferedReader reader = Files.newBufferedReader(logPath)) {
@@ -35,13 +50,17 @@ public class LogParser {
                 processLogIpAddress(line);
                 processLogUrls(line);
             }
-            printResults();
         } catch (IOException e) {
             log.error("Error reading log file");
             throw new RuntimeException(e);
         }
     }
 
+    /**
+     * Processes a log line to extract and count IP occurrences based on a regex pattern matcher
+     *
+     * @param line line from log file being parsed to be processed
+     */
     void processLogIpAddress(String line) {
         Matcher matcher = IP_ADDRESS_PATTERN.matcher(line);
         while (matcher.find()) {
@@ -54,6 +73,11 @@ public class LogParser {
         logIpAddress.put(url, logIpAddress.getOrDefault(url, 0) + 1);
     }
 
+    /**
+     * Processes a log line to extract and count URLs based on a regex pattern matcher
+     *
+     * @param line line from log file being parsed to be processed
+     */
     void processLogUrls(String line) {
         Matcher matcher = URL_PATTERN.matcher(line);
         while (matcher.find()) {
@@ -66,6 +90,12 @@ public class LogParser {
         logUrls.put(url, logUrls.getOrDefault(url, 0) + 1);
     }
 
+    /**
+     * Gets the top three most frequent entries in a map.
+     *
+     * @param map The map to get the top three entries from.
+     * @return A list of the top three entries in the map.
+     */
     List<String> getTopThree(Map<String, Integer> map) {
         return map.entrySet().stream()
                 .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
@@ -74,6 +104,9 @@ public class LogParser {
                 .toList();
     }
 
+    /**
+     * Prints the results of the log parsing process.
+     */
     void printResults() {
         StringBuilder result = new StringBuilder();
         result.append("--------------------------------------------------\n");
