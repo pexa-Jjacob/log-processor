@@ -37,8 +37,16 @@ public class LogParser {
     private static final Pattern URL_PATTERN = Pattern.compile("(GET|POST|PUT|DELETE)\\s+(http://|https://)?[^\\s]+\\s+HTTP/1\\.1");
 
     public static void main(String[] args) {
-        LogParser logParser = new LogParser(new ResultBuilder(new MapUtils()));
-        log.info(logParser.resultBuilder.buildResultString(logParser.parseLog(logPath), logPath));
+        LogParser logParser = createLogParser();
+        List<Map<String, Integer>> parsedLog = logParser.parseLog(logPath);
+        String resultString = logParser.resultBuilder.buildResultString(parsedLog, logPath);
+        log.info(resultString);
+    }
+
+    private static LogParser createLogParser() {
+        MapUtils mapUtils = new MapUtils();
+        ResultBuilder resultBuilder = new ResultBuilder(mapUtils);
+        return new LogParser(resultBuilder);
     }
 
     /**
