@@ -1,102 +1,83 @@
 package com.mantel.logprocessor;
 
-import org.junit.jupiter.api.BeforeEach;
+import com.mantel.logprocessor.app.LogParser;
+import exceptions.LogFileReadException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Spy;
+import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+
 
 @ExtendWith(MockitoExtension.class)
 class LongParserTest {
-    @Spy
+    @InjectMocks
     private LogParser logParser;
 
-    private static final String  mockLogLine = "192.168.1.1 - - [25/Apr/2024:10:29:00 +0000] \"GET /index.html HTTP/1.1\"";
-    private static final Integer EXPECTED_TOP_THREE_SIZE = 3;
-    private static final Integer EXPECTED_UNIQUE_IP_ADDRESSES = 3;
-
-    @BeforeEach
-    public void setUp() {
-        logParser.logPath = Paths.get("src/test/resources/test-log.log");
-    }
-
-    @Test
-    void testParseLog() {
-        logParser.parseLog();
-        verify(logParser, times(1)).parseLog();
-    }
+    public static final Path TEST_LOG_PATH = Path.of("src/test/resources/test-log.log");
+    public static final Path INVALID_LOG_PATH = Path.of("src/test/resources/non-existent-file.log");
+    private static final String  MOCK_LOG_LINE = "192.168.1.1 - - [25/Apr/2024:10:29:00 +0000] \"GET /index.html HTTP/1.1\"";
+    private static final String EXPECTED_ERROR_MESSAGE = "Error reading log file";
+    private static final Integer EXPECTED_LIST_SIZE = 2;
+    private static final Pattern IP_ADDRESS_PATTERN = Pattern.compile("\\b((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b");
+    private static final Pattern URL_PATTERN = Pattern.compile("(GET|POST|PUT|DELETE)\\s+(http://|https://)?[^\\s]+\\s+HTTP/1\\.1");
 
     @Test
     void testParseLogUnhappyPath() {
-        logParser.logPath = Paths.get("src/test/resources/non-existent-file.log");
-
-        assertThrows(RuntimeException.class, () -> logParser.parseLog());
+        LogFileReadException thrown = assertThrows(LogFileReadException.class, () -> logParser.parseLog(INVALID_LOG_PATH));
+        assertThat(thrown.getMessage()).isEqualTo(EXPECTED_ERROR_MESSAGE);
     }
 
     @Test
     void testProcessLogIpAddress() {
-        logParser.processLogIpAddress(mockLogLine);
-        Map<String, Integer> logIpAddress = logParser.logIpAddress;
+        Map<String, Integer> logIpAddress = new HashMap<>();
+        logParser.processMap(MOCK_LOG_LINE, logIpAddress, IP_ADDRESS_PATTERN );
+
         assertThat(logIpAddress).containsEntry("192.168.1.1",1);
     }
 
     @Test
     void testProcessLogUrls() {
-         logParser.processLogUrls(mockLogLine);
-        Map<String, Integer> logUrls = logParser.logUrls;
+        Map<String, Integer> logUrls = new HashMap<>();
+        logParser.processMap(MOCK_LOG_LINE, logUrls, URL_PATTERN);
+
         assertThat(logUrls).containsEntry("GET /index.html HTTP/1.1",1);
     }
 
     @Test
-    public void testGetTopThree() {
-       Map<String, Integer> mockIpAddress = buildIpAddressMap();
+    void testParseLog() {
+        Map<String, Integer> expectedIpAddressMap = buildIpAddressMap();
+        Map<String, Integer> expectedUrlMap = buildUrlMap();
 
-        List<String> topThree = logParser.getTopThree(mockIpAddress);
+        List<Map<String, Integer>> logResults = logParser.parseLog(TEST_LOG_PATH);
 
-        assertThat(topThree).hasSize(EXPECTED_TOP_THREE_SIZE);
-        assertThat( topThree.get(0)).isEqualTo("192.168.1.1, with 5 entries: ");
-        assertThat( topThree.get(1)).isEqualTo("192.168.1.2, with 3 entries: ");
-        assertThat( topThree.get(2)).isEqualTo("192.168.1.3, with 2 entries: ");
-    }
-
-    @Test
-    void testParseLogEndToEnd() {
-        logParser.logPath = Paths.get("src/test/resources/test-log.log");
-
-        logParser.parseLog();
-
-        List<String> topThreeIps = logParser.getTopThree(logParser.logIpAddress);
-        List<String> topThreeUrls = logParser.getTopThree(logParser.logUrls);
-
-        assertThat(topThreeIps).hasSize(EXPECTED_TOP_THREE_SIZE);
-        assertThat( topThreeIps.get(0)).isEqualTo("192.168.1.1, with 7 entries: ");
-        assertThat( topThreeIps.get(1)).isEqualTo("198.51.100.0, with 5 entries: ");
-        assertThat( topThreeIps.get(2)).isEqualTo("203.0.113.0, with 4 entries: ");
-        assertThat(topThreeUrls).hasSize(EXPECTED_TOP_THREE_SIZE);
-        assertThat( topThreeUrls.get(0)).isEqualTo("GET /index.html HTTP/1.1, with 7 entries: ");
-        assertThat( topThreeUrls.get(1)).isEqualTo("PUT /update_info HTTP/1.1, with 5 entries: ");
-        assertThat( topThreeUrls.get(2)).isEqualTo("DELETE /remove_data HTTP/1.1, with 3 entries: ");
-        assertThat(logParser.logIpAddress.values()).hasSize(EXPECTED_UNIQUE_IP_ADDRESSES);
+        assertThat(logResults).hasSize(EXPECTED_LIST_SIZE);
+        assertThat(logResults.get(0)).isEqualTo(expectedIpAddressMap);
+        assertThat(logResults.get(1)).isEqualTo(expectedUrlMap);
     }
 
     private Map<String, Integer> buildIpAddressMap(){
         Map<String, Integer> logIpAddress = new HashMap<>();
-        logIpAddress.put("192.168.1.1", 5);
-        logIpAddress.put("192.168.1.2", 3);
-        logIpAddress.put("192.168.1.3", 2);
-        logIpAddress.put("192.168.1.4", 1);
+        logIpAddress.put("192.168.1.1", 7);
+        logIpAddress.put("198.51.100.0", 5);
+        logIpAddress.put("203.0.113.0", 4);
         return logIpAddress;
     }
 
-
+    private Map<String, Integer> buildUrlMap(){
+        Map<String, Integer> logUrls = new HashMap<>();
+        logUrls.put("DELETE /remove_data HTTP/1.1", 3);
+        logUrls.put("GET /index.html HTTP/1.1", 7);
+        logUrls.put("POST /form_submit HTTP/1.1", 1);
+        logUrls.put("PUT /update_info HTTP/1.1", 5);
+        return logUrls;
+    }
 }

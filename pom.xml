@@ -20,7 +20,7 @@
         <artifactId>exec-maven-plugin</artifactId>
         <version>1.6.0</version>
         <configuration>
-          <mainClass>com.mantel.logprocessor.LogParser</mainClass>
+          <mainClass>com.mantel.logprocessor.app.LogParser</mainClass>
         </configuration>
       </plugin>
     </plugins>
