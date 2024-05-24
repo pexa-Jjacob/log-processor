@@ -49,10 +49,10 @@ The application parses log files and processes the IP addresses and URLs. It als
 
 ## Assumptions
 
--Only dealing with IPV4 addresses in all log files
--Only dealing with HTTP version 1.1, not HTTP/2 and HTTP/3
--This is an MVP to initiate a discussion with the client
--This is a command line tool
+- Only dealing with IPV4 addresses in all log files
+- Only dealing with HTTP version 1.1, not HTTP/2 and HTTP/3
+- This is an MVP to initiate a discussion with the client
+- This is a command line tool
 
 ## Built With
 
